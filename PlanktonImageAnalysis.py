@@ -43,6 +43,8 @@ import imageio
 global load_dir
 load_dir=os.getcwd()
 
+global selector
+    
 #============================================================================
 # Default thresholds for segmenting blobs from a image or binary image
 #minThreshold = 5
@@ -304,6 +306,7 @@ menu = Menu(lbl_fig, lbl_x0, lbl_y0, menuitems)
 class Frame():
     """A class to contain and analyze full images ("frames") from ZooCAM profiles
     """
+    global selector
     def __init__(self,frame_dir=None,frame_file=None,frame_image=None,ROIlist=[],ROIgroup=[],counter=None,display=False):
         self.frame_dir=frame_dir
         self.frame_file=frame_file
@@ -453,21 +456,23 @@ class Frame():
         pts=plt.scatter(ref_pts[:, 0], ref_pts[:, 1], color='r',s=20)
 
         print("Entering group selection: select ROIs with lasso, then <cr> to accept, c or q to cancel...")
-        
         selector = SelectFromCollection(plt.gca(),pts)
+        
         def accept(event):
             if event.key == "enter":
                 print("New group formed with ROIs:")
-                print(selector.ind,selector.xys[selector.ind])
-                new_group_num=self.create_group(selector.ind)
+                print('selector.ind=',selector.ind)
+                # Check for empty group selections:
+                if len(selector.ind)==0:
+                    print('Empty grouping selected; skipping group definition...')
+                else:
+                    print('selector.xys[selector.ind]=',selector.xys[selector.ind])
+                    new_group_num=self.create_group(selector.ind)
+                    self.plot_group(new_group_num)
                 selector.ind=[]
                 selector.xys=[]
-                self.plot_group(new_group_num)
                 selector.disconnect()
-                #ax.set_title("")
-                #plt.gcf().canvas.draw()
                 plt.disconnect(self.binding_id)
-                #del selector
                 self.show_ROIs_frame()
             elif event.key == "c" or event.key == "q":
                 print('cancelled...')
@@ -475,7 +480,6 @@ class Frame():
                 selector.xys=[]
                 selector.disconnect()
                 plt.disconnect(self.binding_id)
-                #del selector
                 self.show_ROIs_frame()
 
         self.binding_id=plt.gcf().canvas.mpl_connect("key_press_event", accept)
@@ -487,6 +491,7 @@ class Frame():
         # Default behavior is to reset both, to avoid divergence in categories
         # within a group (e.g. with "undo").
         grps = [*{*[self.ROIgroup[ir] for ir in grp_ind]}] # unique list of represented groups
+        print('grps=',grps)
         extended_grp_ind=[]
         for ir,roi in enumerate(self.ROIlist): # set all ROIs with specified group numbers 
             if self.ROIgroup[ir] in grps:                     # to lowest group number 
@@ -1288,8 +1293,6 @@ class Analysis():
             except:
                 pass
 
-#        'Frame_num', 'Frames', 'ROIset', 'ROIset_size', '__class__', '__copy__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', 'anal_fig_num', 'axs', 'close_analysis_window', 'create_controlsGUI', 'current_frame', 'fig', 'load_ROIs', 'load_ROIset', 'onClick', 'open_analysis_window', 'parse_ROIsets', 'roi_counter'
-
 
     def open_analysis_window(self,nrows=nrows,ncols=ncols,figsize=figsize,figpos=figpos,facecolor=bg_color,fig_numAnal=105):
         # Open a window for displaying and classifying sets of ROIs
@@ -1453,21 +1456,5 @@ class Analysis():
         #cfm.window.attributes('-topmost', False)
         self.load_ROIset(Frame_num=self.Frame_num,ROIset=self.ROIset)
         
-        #i = 0
-        #for axis in self.fig.axes:  # Replot all ROIs to update collage
-        #    axisNr = i
-        #    #print('axisNr=',axisNr)
-        #    if i==len(self.Frames[self.Frame_num].ROIset_list[self.ROIset]):
-        #        print('breaking at end of ROIset, after %d ROIS...' % len(self.Frames[self.Frame_num].ROIset_list[self.ROIset]))
-        #        break
-        #    ROIindex=self.Frames[self.Frame_num].ROIset_list[self.ROIset][axisNr]
-        #    if ROIindex in group_members:
-        #        axi2=self.axs.flat[axisNr]
-        #        self.Frames[self.Frame_num].ROIlist[ROIindex].show_image(axi2)
-        #    #axi2.draw()
-        #    i += 1
-        #plt.figure(self.anal_fig_num)
-        #plt.gcf().canvas.draw()
-        #return axisNr
 #============================================================================
 
