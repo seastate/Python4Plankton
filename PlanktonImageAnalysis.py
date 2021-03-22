@@ -44,7 +44,10 @@ global load_dir
 load_dir=os.getcwd()
 
 global selector
-    
+
+#============================================================================
+version = 'PIA_20210322'
+print('PythonImageAnalysis version',version)
 #============================================================================
 # Default thresholds for segmenting blobs from a image or binary image
 #minThreshold = 5
