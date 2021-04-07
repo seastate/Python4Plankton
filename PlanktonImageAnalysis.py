@@ -21,6 +21,7 @@ import matplotlib.artist as mpl_artist
 import matplotlib.image as mpl_image
 from matplotlib.widgets import LassoSelector
 from matplotlib.path import Path
+from matplotlib.transforms import IdentityTransform
 
 # Specify the backend for matplotlib -- default does not allow interactive mode
 from matplotlib import use
@@ -46,8 +47,8 @@ load_dir=os.getcwd()
 global selector
 
 #============================================================================
-version = 'PIA_20210322'
-print('PythonImageAnalysis version',version)
+version = 'PIA_20210407'
+print('PlanktonImageAnalysis version',version)
 #============================================================================
 # Default thresholds for segmenting blobs from a image or binary image
 #minThreshold = 5
@@ -115,7 +116,121 @@ class SelectFromCollection(object):
         self.collection.set_facecolors(self.fc)
         self.canvas.draw_idle()
 
-# Menu bar infrastructure for choosing classes, modified froom an example on the matplotlib site
+# Menu bar infrastructure for choosing classes, modified from an example on the matplotlib site;
+# Uses new version of menu construction in revised menu.py from matplotlib gallery, downloaded 20210407
+class ItemProperties:
+    def __init__(self, fontsize=14, labelcolor='black', bgcolor='yellow',
+                 alpha=1.0):
+        self.fontsize = fontsize
+        self.labelcolor = labelcolor
+        self.bgcolor = bgcolor
+        self.alpha = alpha
+
+
+class MenuItem(mpl_artist.Artist):
+    padx = 5
+    pady = 5
+
+    def __init__(self, fig, labelstr, props=None, hoverprops=None,
+                 on_select=None,number=0):
+        super().__init__()
+
+        self.set_figure(fig)
+        self.labelstr = labelstr
+
+        self.props = props if props is not None else ItemProperties()
+        self.hoverprops = (
+            hoverprops if hoverprops is not None else ItemProperties())
+        if self.props.fontsize != self.hoverprops.fontsize:
+            raise NotImplementedError(
+                'support for different font sizes not implemented')
+
+        self.on_select = on_select
+
+        # Setting the transform to IdentityTransform() lets us specify
+        # coordinates directly in pixels.
+        self.label = fig.text(0, 0, labelstr, transform=IdentityTransform(),
+                              size=props.fontsize)
+        self.text_bbox = self.label.get_window_extent(
+            fig.canvas.get_renderer())
+
+        self.rect = mpl_patches.Rectangle((0, 0), 1, 1)  # Will be updated later.
+
+        self.set_hover_props(False)
+
+        fig.canvas.mpl_connect('button_release_event', self.check_select)
+
+    def check_select(self, event):
+        over, _ = self.rect.contains(event)
+        if not over:
+            return
+        if self.on_select is not None:
+            self.on_select(self)
+
+    def set_extent(self, x, y, w, h, depth):
+        self.rect.set(x=x, y=y, width=w, height=h)
+        self.label.set(position=(x + self.padx, y + depth + self.pady/2))
+        self.hover = False
+
+    def draw(self, renderer):
+        self.rect.draw(renderer)
+        self.label.draw(renderer)
+
+    def set_hover_props(self, b):
+        props = self.hoverprops if b else self.props
+        self.label.set(color=props.labelcolor)
+        self.rect.set(facecolor=props.bgcolor, alpha=props.alpha)
+
+    def set_hover(self, event):
+        """
+        Update the hover status of event and return whether it was changed.
+        """
+        b, _ = self.rect.contains(event)
+        changed = (b != self.hover)
+        if changed:
+            self.set_hover_props(b)
+        self.hover = b
+        return changed
+
+
+class Menu:
+    def __init__(self, fig, x0, y0, menuitems):
+        self.figure = fig
+
+        self.menuitems = menuitems
+
+        maxw = max(item.text_bbox.width for item in menuitems)
+        maxh = max(item.text_bbox.height for item in menuitems)
+        depth = max(-item.text_bbox.y0 for item in menuitems)
+
+        totalh = self.numitems*maxh + (self.numitems + 1)*2*MenuItem.pady
+
+        #x0 = 100
+        #y0 = 400
+
+        width = maxw + 2*MenuItem.padx
+        height = maxh + MenuItem.pady
+
+        for item in menuitems:
+            left = x0
+            bottom = y0 - maxh - MenuItem.pady
+
+            item.set_extent(left, bottom, width, height, depth)
+
+            fig.artists.append(item)
+            y0 -= maxh + MenuItem.pady
+
+        fig.canvas.mpl_connect('motion_notify_event', self.on_move)
+
+    def on_move(self, event):
+        if any(item.set_hover(event) for item in self.menuitems):
+            self.figure.canvas.draw()
+
+
+'''
+# Disable depreciated version of memu construction infrastructure;
+# to be removed after confirmation new code is working.
+
 class ItemProperties(object):
     def __init__(self, fontsize=14, labelcolor='black', bgcolor='yellow',
                  alpha=1.0):
@@ -260,7 +375,7 @@ class Menu(object):
             if draw:
                 self.figure.canvas.draw()
                 break
-
+'''
 #============================================================================
 # A function to move windows on the desktop, following
 # https://stackoverflow.com/questions/7449585/how-do-you-set-the-absolute-position-of-figure-windows-with-matplotlib
