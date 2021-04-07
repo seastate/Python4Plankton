@@ -203,7 +203,7 @@ class Menu:
         maxh = max(item.text_bbox.height for item in menuitems)
         depth = max(-item.text_bbox.y0 for item in menuitems)
 
-        totalh = self.numitems*maxh + (self.numitems + 1)*2*MenuItem.pady
+        #totalh = self.numitems*maxh + (self.numitems + 1)*2*MenuItem.pady
 
         #x0 = 100
         #y0 = 400
