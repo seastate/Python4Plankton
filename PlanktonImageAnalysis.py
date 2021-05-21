@@ -47,7 +47,7 @@ load_dir=os.getcwd()
 global selector
 
 #============================================================================
-version = 'PIA_20210407'
+version = 'PIA_20210521'
 print('PlanktonImageAnalysis version',version)
 #============================================================================
 # Default thresholds for segmenting blobs from a image or binary image
@@ -146,6 +146,8 @@ class MenuItem(mpl_artist.Artist):
                 'support for different font sizes not implemented')
 
         self.on_select = on_select
+
+        self.number=number
 
         # Setting the transform to IdentityTransform() lets us specify
         # coordinates directly in pixels.
@@ -396,7 +398,8 @@ def move_figure(f, x, y):
 # Create the classification GUI
 lbl_fig = plt.figure(figsize=lbl_figsize,facecolor='k')
 lbl_fig.subplots_adjust(left=0.01)
-lbl_fig.canvas.set_window_title('Category Selection')
+lbl_fig.canvas.manager.set_window_title('Category Selection')
+#lbl_fig.canvas.set_window_title('Category Selection')
 move_figure(lbl_fig,lbl_figpos[0],lbl_figpos[1])
 
 menuitems = []
@@ -505,7 +508,8 @@ class Frame():
         plt.tight_layout(pad=plt_pad)
         title_str='Figure '+str(self.binary_fig_num)+ \
             ',   Filename: '+self.frame_file
-        plt.gcf().canvas.set_window_title(title_str)
+        plt.gcf().canvas.manager.set_window_title(title_str)
+        #plt.gcf().canvas.set_window_title(title_str)
 
     def show_blobs_frame(self):
         print('plotting contours...')
@@ -513,7 +517,8 @@ class Frame():
         cnt_fig.clf()
         title_str='Figure '+str(self.blobs_fig_num)+ \
             ',   Filename: '+self.frame_file
-        plt.gcf().canvas.set_window_title(title_str)
+        plt.gcf().canvas.manager.set_window_title(title_str)
+        #plt.gcf().canvas.set_window_title(title_str)
         if self.use_binary:
             plt.imshow(self.binary_image, cmap='gray')
         else:
@@ -535,7 +540,8 @@ class Frame():
         roi_fig.clf()
         title_str='Figure '+str(self.ROI_fig_num)+ \
             ',   Filename: '+self.frame_file
-        plt.gcf().canvas.set_window_title(title_str)
+        plt.gcf().canvas.manager.set_window_title(title_str)
+        #plt.gcf().canvas.set_window_title(title_str)
         if self.use_binary:
             plt.imshow(self.binary_image, cmap='gray')
         else:
@@ -632,7 +638,8 @@ class Frame():
         grp_fig.clf()
         title_str='Group #'+str(igrp)+'   Figure '+str(self.grp_fig_num)+ \
             ',   Filename: '+self.frame_file
-        plt.gcf().canvas.set_window_title(title_str)
+        plt.gcf().canvas.manager.set_window_title(title_str)
+        #plt.gcf().canvas.set_window_title(title_str)
         if self.use_binary:
             plt.imshow(self.binary_image, cmap='gray')
         else:
@@ -1210,7 +1217,8 @@ class Analysis():
         #ctrl_fig = plt.figure(108,figsize=ctrl_figsize,facecolor='k')
         #self.ctrl_fig = plt.figure(figsize=ctrl_figsize,facecolor='k')
         ctrl_fig.subplots_adjust(left=0.01)
-        ctrl_fig.canvas.set_window_title('Navigation')
+        ctrl_fig.canvas.manager.set_window_title('Navigation')
+        #ctrl_fig.canvas.set_window_title('Navigation')
         move_figure(ctrl_fig,ctrl_figpos[0],ctrl_figpos[1])
         #self.ctrl_fig.subplots_adjust(left=0.01)
         #self.ctrl_fig.canvas.set_window_title('Navigation')
@@ -1467,7 +1475,8 @@ class Analysis():
             ',   Frame_num '+str(Frame_num)+frame_range_str+ \
             'ROIset '+str(ROIset)+ROIset_range_str+ \
             'Filename: '+self.Frames[Frame_num].frame_file
-        plt.gcf().canvas.set_window_title(title_str)
+        plt.gcf().canvas.manager.set_window_title(title_str)
+        #plt.gcf().canvas.set_window_title(title_str)
         
         # bring window to front
         #self.fig.canvas.manager.window.tkraise() # this does not seem to work 
