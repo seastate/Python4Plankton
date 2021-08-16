@@ -47,7 +47,7 @@ load_dir=os.getcwd()
 global selector
 
 #============================================================================
-version = 'PIA_20210521'
+version = 'PIA_20210814'
 print('PlanktonImageAnalysis version',version)
 #============================================================================
 # Default thresholds for segmenting blobs from a image or binary image
@@ -228,156 +228,6 @@ class Menu:
         if any(item.set_hover(event) for item in self.menuitems):
             self.figure.canvas.draw()
 
-
-'''
-# Disable depreciated version of memu construction infrastructure;
-# to be removed after confirmation new code is working.
-
-class ItemProperties(object):
-    def __init__(self, fontsize=14, labelcolor='black', bgcolor='yellow',
-                 alpha=1.0):
-        self.fontsize = fontsize
-        self.labelcolor = labelcolor
-        self.bgcolor = bgcolor
-        self.alpha = alpha
-
-        self.labelcolor_rgb = mpl_colors.to_rgba(labelcolor)[:3]
-        self.bgcolor_rgb = mpl_colors.to_rgba(bgcolor)[:3]
-
-
-class MenuItem(mpl_artist.Artist):
-    parser = mathtext.MathTextParser("Bitmap")
-    padx = 10
-    pady = 5
-
-    def __init__(self, fig, labelstr, props=None, hoverprops=None,
-                 on_select=None,number=0):
-        mpl_artist.Artist.__init__(self)
-
-        self.set_figure(fig)
-        self.labelstr = labelstr
-
-        if props is None:
-            props = ItemProperties()
-
-        if hoverprops is None:
-            hoverprops = ItemProperties()
-
-        self.props = props
-        self.hoverprops = hoverprops
-
-        self.on_select = on_select
-
-        self.number=number
-
-        x, self.depth = self.parser.to_mask(
-            labelstr, fontsize=props.fontsize, dpi=fig.dpi)
-
-        if props.fontsize != hoverprops.fontsize:
-            raise NotImplementedError(
-                'support for different font sizes not implemented')
-
-        self.labelwidth = x.shape[1]
-        self.labelheight = x.shape[0]
-
-        self.labelArray = np.zeros((x.shape[0], x.shape[1], 4))
-        self.labelArray[:, :, -1] = x/255.
-
-        self.label = mpl_image.FigureImage(fig, origin='upper')
-        self.label.set_array(self.labelArray)
-
-        # we'll update these later
-        self.rect = mpl_patches.Rectangle((0, 0), 1, 1)
-
-        self.set_hover_props(False)
-
-        fig.canvas.mpl_connect('button_release_event', self.check_select)
-
-    def check_select(self, event):
-        over, junk = self.rect.contains(event)
-        if not over:
-            return
-
-        if self.on_select is not None:
-            self.on_select(self)
-
-    def set_extent(self, x, y, w, h):
-        #print(x, y, w, h)
-        self.rect.set_x(x)
-        self.rect.set_y(y)
-        self.rect.set_width(w)
-        self.rect.set_height(h)
-
-        self.label.ox = x + self.padx
-        self.label.oy = y - self.depth + self.pady/2.
-
-        self.hover = False
-
-    def draw(self, renderer):
-        self.rect.draw(renderer)
-        self.label.draw(renderer)
-
-    def set_hover_props(self, b):
-        if b:
-            props = self.hoverprops
-        else:
-            props = self.props
-
-        r, g, b = props.labelcolor_rgb
-        self.labelArray[:, :, 0] = r
-        self.labelArray[:, :, 1] = g
-        self.labelArray[:, :, 2] = b
-        self.label.set_array(self.labelArray)
-        self.rect.set(facecolor=props.bgcolor, alpha=props.alpha)
-
-    def set_hover(self, event):
-        'check the hover status of event and return true if status is changed'
-        b, junk = self.rect.contains(event)
-
-        changed = (b != self.hover)
-
-        if changed:
-            self.set_hover_props(b)
-
-        self.hover = b
-        return changed
-
-
-class Menu(object):
-    def __init__(self, fig, x0, y0,menuitems):
-        self.figure = fig
-        fig.suppressComposite = True
-
-        self.menuitems = menuitems
-        self.numitems = len(menuitems)
-
-        maxw = max(item.labelwidth for item in menuitems)
-        maxh = max(item.labelheight for item in menuitems)
-
-        totalh = self.numitems*maxh + (self.numitems + 1)*2*MenuItem.pady
-
-        width = maxw + 2*MenuItem.padx
-        height = maxh + MenuItem.pady
-
-        for item in menuitems:
-            left = x0
-            bottom = y0 - maxh - MenuItem.pady
-
-            item.set_extent(left, bottom, width, height)
-
-            fig.artists.append(item)
-            y0 -= maxh + MenuItem.pady
-
-        fig.canvas.mpl_connect('motion_notify_event', self.on_move)
-
-    def on_move(self, event):
-        draw = False
-        for item in self.menuitems:
-            draw = item.set_hover(event)
-            if draw:
-                self.figure.canvas.draw()
-                break
-'''
 #============================================================================
 # A function to move windows on the desktop, following
 # https://stackoverflow.com/questions/7449585/how-do-you-set-the-absolute-position-of-figure-windows-with-matplotlib
@@ -659,6 +509,73 @@ class Frame():
         cfm.window.attributes('-topmost', True)
         cfm.window.attributes('-topmost', False)
         grp_fig.canvas.draw()
+
+    def export_all_groups(self,target_dir,grp_export_fig_num=206,plotting=False,verbose=False,delay=1):
+        ''' Method to export classified ROIs to a specified directory (target_dir), into subdirectories 
+            named for the classification labels. Subdirectories are created if not already present
+            within target_dir; target_dir itself is not presently created if not already present.
+        '''
+        for igrp in self.ROIgroup:
+            self.export_group(igrp,target_dir,grp_export_fig_num=grp_export_fig_num,plotting=plotting,verbose=verbose)
+            time.sleep(delay)
+
+    def export_group(self,igrp,target_dir,grp_export_fig_num=206,plotting=False,verbose=False):
+        ''' Method to export classified ROIs to a specified directory (target_dir), into subdirectories 
+            named for the classification labels. Subdirectories are created if not already present
+            within target_dir; target_dir itself is not presently created if not already present.
+        '''
+        # get list of group members
+        grp_inds = self.get_group_members(igrp)
+        #grp_ind = self.ROIgroup.index(igrp)
+        mem_inds=[self.ROIindices[grp_ind] for grp_ind in grp_inds]
+        #mem_inds=self.ROIindices[grp_ind]
+        # get extent of group ROIs in frame
+        i_beg=min([self.ROIlist[mem_ind].i_beg for mem_ind in mem_inds])
+        i_end=max([self.ROIlist[mem_ind].i_end for mem_ind in mem_inds])
+        j_beg=min([self.ROIlist[mem_ind].j_beg for mem_ind in mem_inds])
+        j_end=max([self.ROIlist[mem_ind].j_end for mem_ind in mem_inds])
+        if verbose:
+            print('i_beg,j_beg,i_end,j_end = ',i_beg,j_beg,i_end,j_end)
+
+        # create an image with the composite of group ROIs
+        composite=Image.new('RGB',[i_end-i_beg,j_end-j_beg]) # new image with default black background
+        for mem_ind in mem_inds:
+            if verbose:
+                print('mem_ind = ',mem_ind)
+                print('category,label,code = ',self.ROIlist[mem_ind].category,self.ROIlist[mem_ind].label,self.ROIlist[mem_ind].code)
+                print('image size = ',self.ROIlist[mem_ind].ROIimage.size)
+                print('box = ',[self.ROIlist[mem_ind].i_beg-i_beg,self.ROIlist[mem_ind].j_beg-j_beg,
+                                self.ROIlist[mem_ind].i_end-i_beg-1,self.ROIlist[mem_ind].j_end-j_beg-1])
+            composite.paste(self.ROIlist[mem_ind].ROIimage,
+            box=[self.ROIlist[mem_ind].i_beg-i_beg,self.ROIlist[mem_ind].j_beg-j_beg])    
+            #composite.paste(self.ROIlist[mem_ind].ROIimage,
+            #box=[self.ROIlist[mem_ind].i_beg-i_beg,self.ROIlist[mem_ind].j_beg-j_beg,
+            #     self.ROIlist[mem_ind].i_end-i_beg,self.ROIlist[mem_ind].j_end-j_beg])    
+        # construct path for the saved image
+        grp_dir_path=os.path.join(target_dir,self.ROIlist[mem_inds[0]].label.replace('/','_'))
+        if os.path.exists(grp_dir_path)==False:
+            print('creating new image directory: ',grp_dir_path) 
+            os.mkdir(grp_dir_path)
+        grp_image_name=self.frame_file.replace('.tif','_grp')+str(igrp)+'.tif'
+        grp_image_path=os.path.join(grp_dir_path,grp_image_name)
+        if verbose:
+            print('Creating classified image: ',grp_image_path)
+            #print('category,label,code = ',self.ROIlist[mem_ind].category,self.ROIlist[mem_ind].label,self.ROIlist[mem_ind].code)
+        try:
+            composite.save(grp_image_path)
+        except:
+            print('ERROR: Failed to create classified image: ',grp_image_path)
+        if plotting:
+            # Create a new image window to plot the specified group
+            self.grp_export_fig_num=grp_export_fig_num
+            grp_export_fig=plt.figure(self.grp_export_fig_num,facecolor=tuple([i/255 for i in bg_color]))
+            grp_export_fig.clf()
+            title_str='Group #'+str(igrp)+'   Figure '+str(self.grp_export_fig_num)+ \
+                ',   Filename: '+self.frame_file
+            plt.gcf().canvas.manager.set_window_title(title_str)
+            #plt.gcf().canvas.set_window_title(title_str)
+            plt.imshow(composite, cmap='gray')
+            grp_export_fig.canvas.draw()
                    
     def get_group_members(self,igrp):
         # Return a list of all members of the indicated group
@@ -1582,6 +1499,17 @@ class Analysis():
         #cfm.window.attributes('-topmost', True)
         #cfm.window.attributes('-topmost', False)
         self.load_ROIset(Frame_num=self.Frame_num,ROIset=self.ROIset)
+
+    def export_all_frames(self,target_dir,grp_export_fig_num=206,plotting=False,verbose=False,delay=1):
+        ''' Method to export classified ROIs to a specified directory (target_dir), into subdirectories 
+            named for the classification labels. Subdirectories are created if not already present
+            within target_dir; target_dir itself is not presently created if not already present.
+        '''
+        for frame in self.Frames:
+            for igrp in frame.ROIgroup:
+                frame.export_group(igrp,target_dir,grp_export_fig_num=grp_export_fig_num,plotting=plotting,verbose=verbose)
+                time.sleep(delay)
+        
         
 #============================================================================
 
