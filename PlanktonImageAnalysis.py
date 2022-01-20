@@ -1275,7 +1275,9 @@ class Analysis():
                         log_str='{}; {}; Saving archive'.format(time.time(),analyst)
                         #log_str=str(time.time())+'; '+self.analyst+'; Saving archive'
                         self.log.append(log_str)
-                        save_snapshot(self,compression='gzip',prefix=prefix,timestamp=True,frame_num=self.Frame_num)
+                         # changed to never include timestamp:
+                        save_snapshot(self,compression='gzip',prefix=prefix,timestamp=True)
+                        #save_snapshot(self,compression='gzip',prefix=prefix,timestamp=True,frame_num=self.Frame_num)
                 elif ctr_label=='Archive current frame':
                     prefix=simpledialog.askstring(title = "Archive frame "+str(self.Frame_num), prompt = "Enter path/prefix:",
                                                   initialvalue=os.path.join(self.Frames[self.Frame_num].frame_dir,
