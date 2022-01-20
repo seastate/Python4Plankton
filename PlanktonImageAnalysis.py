@@ -47,7 +47,7 @@ load_dir=os.getcwd()
 global selector
 
 #============================================================================
-version = 'PIA_20210814'
+version = 'PIA_20220120'
 print('PlanktonImageAnalysis version',version)
 #============================================================================
 # Default thresholds for segmenting blobs from a image or binary image
@@ -519,7 +519,7 @@ class Frame():
             self.export_group(igrp,target_dir,grp_export_fig_num=grp_export_fig_num,plotting=plotting,verbose=verbose)
             time.sleep(delay)
 
-    def export_group(self,igrp,target_dir,grp_export_fig_num=206,plotting=False,verbose=False):
+    def export_group(self,igrp,target_dir,grp_export_fig_num=206,plotting=False,verbose=False,exportROI=True,exportEll=True):
         ''' Method to export classified ROIs to a specified directory (target_dir), into subdirectories 
             named for the classification labels. Subdirectories are created if not already present
             within target_dir; target_dir itself is not presently created if not already present.
@@ -556,7 +556,15 @@ class Frame():
         if os.path.exists(grp_dir_path)==False:
             print('creating new image directory: ',grp_dir_path) 
             os.mkdir(grp_dir_path)
-        grp_image_name=self.frame_file.replace('.tif','_grp')+str(igrp)+'.tif'
+        # Add ROI geometry to ROI filename
+        grp_image_name=self.frame_file.replace('.tif','_grp')+str(igrp)
+        if self.exportRoi:
+            grp_image_name+='_r{}_{}_{}_{}'.format(i_beg,j_beg,i_end-i_beg,j_end-j_beg)
+        if self.exportEll:
+            ellbox=self.ROIlist[mem_ind].ellbox
+            grp_image_name+='_e{}_{}_{}_{}_{}'.format(ellbox[0][0],ellbox[0][1],ellbox[1][0],ellbox[1][1],ellbox[2])
+            grp_image_name+='.tif'
+        #grp_image_name=self.frame_file.replace('.tif','_grp')+str(igrp)+'.tif'
         grp_image_path=os.path.join(grp_dir_path,grp_image_name)
         if verbose:
             print('Creating classified image: ',grp_image_path)
@@ -1078,7 +1086,8 @@ class Analysis():
     global cat_number
     global frm_dir_
     def __init__(self,frame_dir_list=[],frame_file_list=[],scan_dir=True,Frames=[],frame_image_list=[],
-                 current_frame=0,create_GUI=True,min_val=minThreshold,comment=None,name=None,analyst=None):
+                 current_frame=0,create_GUI=True,min_val=minThreshold,comment=None,name=None,analyst=None,
+                 exportROI=True,exportEll=True):
         self.current_frame=current_frame
         self.Frames=[]  # an empty list to contain frames
         # Order of precedence in initializing analysis:
@@ -1124,6 +1133,9 @@ class Analysis():
 
         if create_GUI:
             self.create_controlsGUI()
+
+        self.exportROI=exportROI
+        self.exportEll=exportEll
         
         #============================================================================
     def create_controlsGUI(self,ctrl_fig_num=107):
@@ -1509,7 +1521,8 @@ class Analysis():
         '''
         for frame in self.Frames:
             for igrp in frame.ROIgroup:
-                frame.export_group(igrp,target_dir,grp_export_fig_num=grp_export_fig_num,plotting=plotting,verbose=verbose)
+                frame.export_group(igrp,target_dir,grp_export_fig_num=grp_export_fig_num,plotting=plotting,
+                                   verbose=verbose,exportROI=self.exportROI,exportEll=self.exportEll)
                 time.sleep(delay)
         
         
